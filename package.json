@@ -1,0 +1,27 @@
+{
+  "name": "retail-order-tracker",
+  "private": true,
+  "scripts": {
+    "api": "cd apps/api && .venv/bin/fastapi dev src/main.py",
+    "api:test": "cd apps/api && .venv/bin/python -m pytest",
+    "api:lint": "cd apps/api && .venv/bin/ruff check src/",
+    "api:lint:fix": "cd apps/api && .venv/bin/ruff check src/ --fix",
+    "api:migrate": "cd apps/api && .venv/bin/alembic upgrade head",
+    "web": "cd apps/web && npm run dev",
+    "web:test": "cd apps/web && npx vitest --run",
+    "web:lint": "cd apps/web && npm run lint",
+    "initial-seed": "bash scripts/initial-seed.sh",
+    "dc:up": "docker compose up -d",
+    "dc:up:infra": "docker compose -f docker-compose.infra.yml up -d",
+    "dc:down": "docker compose down",
+    "dc:down:infra": "docker compose -f docker-compose.infra.yml down",
+    "dc:ps": "docker compose ps",
+    "dc:ps:infra": "docker compose -f docker-compose.infra.yml ps",
+    "dc:clean": "docker compose down -v",
+    "dc:logs": "docker compose logs -f",
+    "dc:logs:pg": "docker compose logs -f postgres",
+    "dc:logs:minio": "docker compose logs -f minio",
+    "dc:logs:phoenix": "docker compose logs -f phoenix",
+    "dc:logs:n8n": "docker compose logs -f n8n"
+  }
+}
