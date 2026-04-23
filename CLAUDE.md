@@ -74,8 +74,9 @@ All parsers return a normalised `OrderDTO` (Pydantic v2). Original file bytes al
 - All monetary amounts stored in **minor units** (integer cents) — never floats
 - UUIDs for all primary keys
 - Human-readable codes with format `PREFIX-YYYY-MM-NNNNNN` (e.g. `ORD-2026-04-000012`)
-- Soft deletes via `disabledAt` nullable datetime (not hard deletes)
-- All tables include `createdAt` and `updatedAt` timestamps
+- Soft deletes via a nullable `disabled_at` datetime (not hard deletes)
+- All tables include `created_at` and `updated_at` timestamps
+- **DB columns are snake_case**; API JSON is camelCase (via Pydantic `alias_generator=to_camel`)
 - `Europe/Madrid` timezone for dates displayed to operators
 
 ### Python / Backend
