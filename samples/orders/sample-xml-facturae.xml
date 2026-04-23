@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PurchaseOrder xmlns="urn:edi:purchaseorder:v1">
+  <Header>
+    <OrderNumber>PO-ELCORTE-000789</OrderNumber>
+    <OrderDate>2026-04-22T09:00:00Z</OrderDate>
+    <ExpectedDeliveryDate>2026-04-29T09:00:00Z</ExpectedDeliveryDate>
+    <Currency>EUR</Currency>
+  </Header>
+  <Buyer>
+    <Code>ELCORTE-ES</Code>
+    <Name>El Corte Inglés SA</Name>
+  </Buyer>
+  <Seller>
+    <Code>FASHION-PLUS</Code>
+    <Name>Fashion Plus SL</Name>
+  </Seller>
+  <Items>
+    <Item lineNumber="1">
+      <ProductCode>SHIRT-COTTON-M</ProductCode>
+      <ProductName>Cotton Shirt Size M</ProductName>
+      <Quantity>50</Quantity>
+      <UnitPrice>29.95</UnitPrice>
+      <LineTotal>1497.50</LineTotal>
+    </Item>
+    <Item lineNumber="2">
+      <ProductCode>JEANS-32X32</ProductCode>
+      <ProductName>Jeans 32x32</ProductName>
+      <Quantity>30</Quantity>
+      <UnitPrice>49.95</UnitPrice>
+      <LineTotal>1498.50</LineTotal>
+    </Item>
+  </Items>
+  <TotalAmount>2996.00</TotalAmount>
+</PurchaseOrder>

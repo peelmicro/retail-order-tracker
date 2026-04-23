@@ -1,0 +1,33 @@
+{
+  "orderId": "PO-CARREFOUR-000123",
+  "orderDate": "2026-04-20T10:30:00Z",
+  "deliveryDate": "2026-04-27T10:00:00Z",
+  "buyer": {
+    "code": "CARREFOUR-ES",
+    "name": "Carrefour España SA"
+  },
+  "seller": {
+    "code": "IBERIAN-FOODS",
+    "name": "Iberian Foods SL"
+  },
+  "currency": "EUR",
+  "lines": [
+    {
+      "no": 1,
+      "sku": "SKU-OIL-EVO-1L",
+      "description": "Extra Virgin Olive Oil 1L",
+      "qty": 100,
+      "unitPriceMinor": 595,
+      "lineTotalMinor": 59500
+    },
+    {
+      "no": 2,
+      "sku": "SKU-HAM-IBERICO-200G",
+      "description": "Iberian Ham 200g",
+      "qty": 50,
+      "unitPriceMinor": 1295,
+      "lineTotalMinor": 64750
+    }
+  ],
+  "totalMinor": 124250
+}
