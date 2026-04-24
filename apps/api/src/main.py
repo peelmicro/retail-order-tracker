@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.agents import router as agents_router
 from src.api.auth import router as auth_router
 from src.api.datasets import router as datasets_router
+from src.api.documents import router as documents_router
 from src.api.feedback import router as feedback_router
 from src.api.health import router as health_router
 from src.api.orders import router as orders_router
@@ -47,6 +48,7 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(agents_router)
 app.include_router(datasets_router)
+app.include_router(documents_router)
 app.include_router(orders_router)
 app.include_router(feedback_router)
 app.include_router(reports_router)
