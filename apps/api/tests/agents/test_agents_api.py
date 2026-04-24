@@ -109,3 +109,115 @@ async def test_invalid_payload_returns_422(client: httpx.AsyncClient) -> None:
         json={"order": {"orderNumber": "missing-other-fields"}, "recentOrders": []},
     )
     assert response.status_code == 422
+
+
+# ---- POST /api/agents/analyst/run/by-order/{order_id} -------------------
+
+
+@pytest.mark.asyncio
+async def test_analyse_by_order_unauthenticated_returns_401(
+    client: httpx.AsyncClient,
+) -> None:
+    from uuid import uuid4
+
+    response = await client.post(f"/api/agents/analyst/run/by-order/{uuid4()}")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_analyse_by_order_unknown_id_returns_404(
+    client: httpx.AsyncClient,
+) -> None:
+    from uuid import uuid4
+
+    token = await _login(client)
+    response = await client.post(
+        f"/api/agents/analyst/run/by-order/{uuid4()}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_analyse_by_order_persists_suggestion_and_returns_result(
+    client: httpx.AsyncClient, mock_agent
+) -> None:
+    """Seed a real order + pair history, call the endpoint with the order ID,
+    assert the response echoes the (mocked) agent result and a suggestion row
+    was written."""
+    from datetime import UTC, datetime
+    from uuid import UUID, uuid4
+
+    from sqlalchemy import select
+
+    from src.infrastructure.persistence.engine import async_session_factory
+    from src.infrastructure.persistence.models.agent_suggestion import AgentSuggestion
+    from src.infrastructure.persistence.models.currency import Currency
+    from src.infrastructure.persistence.models.order import Order
+    from src.infrastructure.persistence.models.order_line_item import OrderLineItem
+    from src.infrastructure.persistence.models.retailer import Retailer
+    from src.infrastructure.persistence.models.supplier import Supplier
+
+    marker = uuid4().hex[:8]
+    async with async_session_factory() as session:
+        retailer = Retailer(id=uuid4(), code=f"R-BY-{marker}", name="By-Order Retailer")
+        supplier = Supplier(id=uuid4(), code=f"S-BY-{marker}", name="By-Order Supplier")
+        currency = (
+            await session.execute(select(Currency).where(Currency.code == "EUR"))
+        ).scalar_one()
+        session.add_all([retailer, supplier])
+        await session.flush()
+        order_id = uuid4()
+        order = Order(
+            id=order_id,
+            code=f"ORD-BY-{marker}",
+            retailer_id=retailer.id,
+            supplier_id=supplier.id,
+            order_number="PO-BY-API",
+            order_date=datetime.now(UTC),
+            status="pending_review",
+            total_amount=5_000,
+            currency_id=currency.id,
+            raw_payload={"source_format": "test"},
+            documents=[],
+        )
+        session.add(order)
+        # OrderDTO requires at least 1 line item — seed one so the use case
+        # can reconstruct a valid OrderDTO from ORM rows.
+        session.add(
+            OrderLineItem(
+                id=uuid4(),
+                order_id=order_id,
+                line_number=1,
+                product_code="SKU-BY-API",
+                product_name="By-order test product",
+                quantity=5,
+                unit_price=1_000,
+                line_total=5_000,
+            )
+        )
+        await session.commit()
+
+    token = await _login(client)
+    response = await client.post(
+        f"/api/agents/analyst/run/by-order/{order_id}?recent_limit=10",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["action"] == "approve"
+    assert body["confidence"] == 0.9
+    assert body["phoenixTraceId"] == "abc123"
+    assert body["recentOrdersConsidered"] == 0  # no history for this fresh pair
+
+    # Verify a suggestion row exists for this order
+    async with async_session_factory() as session:
+        suggestion = (
+            await session.execute(
+                select(AgentSuggestion).where(
+                    AgentSuggestion.id == UUID(body["suggestionId"])
+                )
+            )
+        ).scalar_one()
+        assert suggestion.order_id == order_id
+        assert suggestion.phoenix_trace_id == "abc123"

@@ -1,0 +1,44 @@
+{
+  "id": "rotWorkflow03",
+  "name": "03 — Escalation — Notify Supervisor",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "escalation",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-escalation",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [200, 300],
+      "webhookId": "escalation"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://httpbin.org/post",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({ subject: `[ESCALATION] Order ${$('Webhook').item.json.body.orderId}`, severity: 'high', reason: $('Webhook').item.json.body.reason || 'No reason provided', orderCode: $('Webhook').item.json.body.orderCode, ticketType: 'retail-order-review', source: 'n8n-retail-order-tracker' }) }}",
+        "options": {}
+      },
+      "id": "create-ticket",
+      "name": "Create mock supervisor ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Create mock supervisor ticket", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
