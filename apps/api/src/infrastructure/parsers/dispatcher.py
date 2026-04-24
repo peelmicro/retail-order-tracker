@@ -16,16 +16,24 @@ class OrderParserDispatcher:
     def __init__(self, parsers: list[OrderParser]):
         self._parsers = parsers
 
+    def find_parser(
+        self,
+        filename: str,
+        mime_type: str | None = None,
+    ) -> OrderParser:
+        """Return the first parser whose supports() returns true."""
+        for parser in self._parsers:
+            if parser.supports(filename, mime_type):
+                return parser
+        raise UnsupportedFormatError(filename, mime_type)
+
     def dispatch(
         self,
         file_bytes: bytes,
         filename: str,
         mime_type: str | None = None,
     ) -> OrderDTO:
-        for parser in self._parsers:
-            if parser.supports(filename, mime_type):
-                return parser.parse(file_bytes, filename)
-        raise UnsupportedFormatError(filename, mime_type)
+        return self.find_parser(filename, mime_type).parse(file_bytes, filename)
 
 
 def default_dispatcher(

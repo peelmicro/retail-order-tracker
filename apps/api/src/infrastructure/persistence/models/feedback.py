@@ -26,11 +26,21 @@ class Feedback(Base, TimestampMixin):
     )
 
     operator_decision: Mapped[OperatorDecision] = mapped_column(
-        ENUM(OperatorDecision, name="operator_decision", create_type=False),
+        ENUM(
+            OperatorDecision,
+            name="operator_decision",
+            create_type=False,
+            values_callable=lambda enum_class: [e.value for e in enum_class],
+        ),
         nullable=False,
     )
     final_action: Mapped[AgentAction] = mapped_column(
-        ENUM(AgentAction, name="agent_action", create_type=False),
+        ENUM(
+            AgentAction,
+            name="agent_action",
+            create_type=False,
+            values_callable=lambda enum_class: [e.value for e in enum_class],
+        ),
         nullable=False,
     )
     operator_reason: Mapped[str | None] = mapped_column(Text, nullable=True)

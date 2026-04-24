@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 
-from src.domain.user import User
+from src.domain.user import User, UserRole
 from src.infrastructure.auth.jwt_service import decode_token
 from src.infrastructure.auth.user_store import user_store
 
@@ -27,3 +27,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     if user is None or not user.is_active:
         raise credentials_exception
     return user
+
+
+async def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required",
+        )
+    return current_user

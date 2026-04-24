@@ -41,7 +41,12 @@ class Order(Base, TimestampMixin):
     )
 
     status: Mapped[OrderStatus] = mapped_column(
-        ENUM(OrderStatus, name="order_status", create_type=False),
+        ENUM(
+            OrderStatus,
+            name="order_status",
+            create_type=False,
+            values_callable=lambda enum_class: [e.value for e in enum_class],
+        ),
         nullable=False,
         default=OrderStatus.PENDING_REVIEW,
     )

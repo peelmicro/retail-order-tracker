@@ -22,7 +22,12 @@ class AgentSuggestion(Base, TimestampMixin):
 
     agent_type: Mapped[str] = mapped_column(String(20), nullable=False, default="analyst")
     action: Mapped[AgentAction] = mapped_column(
-        ENUM(AgentAction, name="agent_action", create_type=False),
+        ENUM(
+            AgentAction,
+            name="agent_action",
+            create_type=False,
+            values_callable=lambda enum_class: [e.value for e in enum_class],
+        ),
         nullable=False,
     )
     confidence: Mapped[Decimal] = mapped_column(Numeric(4, 3), nullable=False)
