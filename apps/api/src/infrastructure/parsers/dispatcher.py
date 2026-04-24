@@ -2,9 +2,11 @@
 
 from src.application.dtos import OrderDTO
 from src.application.ports.order_parser import OrderParser, UnsupportedFormatError
+from src.application.ports.parser_agent import ParserAgent
 from src.infrastructure.parsers.csv_parser import CsvOrderParser
 from src.infrastructure.parsers.edifact_parser import EdifactOrderParser
 from src.infrastructure.parsers.json_parser import JsonOrderParser
+from src.infrastructure.parsers.pdf_parser import PdfOrderParser
 from src.infrastructure.parsers.xml_parser import XmlOrderParser
 
 
@@ -26,13 +28,21 @@ class OrderParserDispatcher:
         raise UnsupportedFormatError(filename, mime_type)
 
 
-def default_dispatcher() -> OrderParserDispatcher:
-    """Factory wiring the 4 deterministic parsers in registration order."""
-    return OrderParserDispatcher(
-        [
-            JsonOrderParser(),
-            XmlOrderParser(),
-            CsvOrderParser(),
-            EdifactOrderParser(),
-        ]
-    )
+def default_dispatcher(
+    parser_agent: ParserAgent | None = None,
+) -> OrderParserDispatcher:
+    """Factory wiring the deterministic parsers in registration order.
+
+    Pass a ParserAgent to also include the PdfOrderParser. Leaving it None
+    yields the 4 deterministic parsers only — useful for code paths that
+    never need AI (e.g. unit tests, environments without an API key).
+    """
+    parsers: list[OrderParser] = [
+        JsonOrderParser(),
+        XmlOrderParser(),
+        CsvOrderParser(),
+        EdifactOrderParser(),
+    ]
+    if parser_agent is not None:
+        parsers.append(PdfOrderParser(parser_agent))
+    return OrderParserDispatcher(parsers)

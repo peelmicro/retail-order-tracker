@@ -16,8 +16,9 @@ class Settings(BaseSettings):
     minio_bucket: str = "orders"
     minio_secure: bool = False
 
-    # Phoenix (OTLP HTTP)
-    phoenix_endpoint: str = "http://localhost:4318"
+    # Phoenix — HTTP OTLP endpoint is on the same port as the UI (6006),
+    # not the OpenTelemetry-standard 4318.
+    phoenix_endpoint: str = "http://localhost:6006"
 
     # n8n
     n8n_webhook_url: str = "http://localhost:5678"

@@ -1,9 +1,20 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.agents import router as agents_router
 from src.api.auth import router as auth_router
 from src.api.health import router as health_router
 from src.config import settings
+from src.infrastructure.observability.phoenix import init_phoenix
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_phoenix(service_name="retail-order-tracker")
+    yield
+
 
 app = FastAPI(
     title="Retail Order Tracker API",
@@ -15,6 +26,7 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -27,3 +39,4 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(auth_router)
+app.include_router(agents_router)
