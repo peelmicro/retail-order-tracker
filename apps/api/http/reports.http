@@ -1,0 +1,39 @@
+### Reports — daily aggregates via pandas
+###
+### Backed by GET /api/reports/daily. Date range optional; defaults to today (UTC).
+### Used by n8n's "02 — Daily Anomaly Report" workflow on a cron and by the
+### dashboard Home view.
+
+@host = http://localhost:8000
+
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=admin123
+
+
+# ============================================================================
+# GET /api/reports/daily
+# ============================================================================
+### Today (no params)
+GET {{host}}/api/reports/daily
+Authorization: Bearer {{login.response.body.accessToken}}
+
+###
+
+### Specific day (single date — fromDate == toDate)
+GET {{host}}/api/reports/daily?from_date=2026-04-24&to_date=2026-04-25
+Authorization: Bearer {{login.response.body.accessToken}}
+
+###
+
+### Date range (last 7 days)
+GET {{host}}/api/reports/daily?from_date=2026-04-19&to_date=2026-04-25
+Authorization: Bearer {{login.response.body.accessToken}}
+
+###
+
+### Empty range (deep past) → totalOrders=0, all collections empty
+GET {{host}}/api/reports/daily?from_date=1970-01-01&to_date=1970-01-01
+Authorization: Bearer {{login.response.body.accessToken}}

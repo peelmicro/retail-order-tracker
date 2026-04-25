@@ -1,0 +1,101 @@
+### Agents — stateless run + persisted run-by-order
+###
+### Both endpoints invoke the Analyst Agent (live Claude call ≈ $0.02 each).
+### The stateless variant takes a full OrderDTO in the body and returns the
+### result without persisting. The by-order variant takes just an order_id,
+### loads the order + recent history from DB, and persists an AgentSuggestion.
+
+@host = http://localhost:8000
+
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=admin123
+
+
+# ============================================================================
+# POST /api/agents/analyst/run — stateless, body-driven
+# ============================================================================
+### Looks normal — agent should approve
+POST {{host}}/api/agents/analyst/run
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "order": {
+    "orderNumber": "PO-DEMO-001",
+    "orderDate": "2026-04-25T10:00:00Z",
+    "expectedDeliveryDate": "2026-05-02T10:00:00Z",
+    "retailerCode": "CARREFOUR-ES",
+    "retailerName": "Carrefour España SA",
+    "supplierCode": "IBERIAN-FOODS",
+    "supplierName": "Iberian Foods SL",
+    "currencyCode": "EUR",
+    "totalAmount": 124250,
+    "lineItems": [
+      {
+        "lineNumber": 1,
+        "productCode": "SKU-OIL-EVO-1L",
+        "productName": "Extra Virgin Olive Oil 1L",
+        "quantity": 100,
+        "unitPrice": 595,
+        "lineTotal": 59500
+      },
+      {
+        "lineNumber": 2,
+        "productCode": "SKU-HAM-IBERICO-200G",
+        "productName": "Iberian Ham 200g",
+        "quantity": 50,
+        "unitPrice": 1295,
+        "lineTotal": 64750
+      }
+    ]
+  },
+  "recentOrders": []
+}
+
+###
+
+### Anomalous order — agent should escalate
+POST {{host}}/api/agents/analyst/run
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "order": {
+    "orderNumber": "PO-WEIRD-002",
+    "orderDate": "2026-04-25T10:00:00Z",
+    "retailerCode": "LEROY-ES",
+    "retailerName": "Leroy Merlin España",
+    "supplierCode": "IBERIAN-FOODS",
+    "supplierName": "Iberian Foods SL",
+    "currencyCode": "EUR",
+    "totalAmount": 13500000,
+    "lineItems": [
+      {
+        "lineNumber": 1,
+        "productCode": "SKU-LUXURY-WATCH",
+        "productName": "Diamond Watch",
+        "quantity": 999,
+        "unitPrice": 13513,
+        "lineTotal": 13499487
+      }
+    ]
+  },
+  "recentOrders": []
+}
+
+
+# ============================================================================
+# POST /api/agents/analyst/run/by-order/{order_id} — persisted
+# ============================================================================
+### Pick an order_id from `GET /api/orders?status=pending_review` first.
+POST {{host}}/api/agents/analyst/run/by-order/00000000-0000-0000-0000-000000000000?recent_limit=50
+Authorization: Bearer {{login.response.body.accessToken}}
+
+###
+
+### Unknown order → 404
+POST {{host}}/api/agents/analyst/run/by-order/11111111-1111-1111-1111-111111111111
+Authorization: Bearer {{login.response.body.accessToken}}

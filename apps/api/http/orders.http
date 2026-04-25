@@ -1,0 +1,128 @@
+### Orders — multipart ingest, paginated list, single detail
+###
+### Run "Login" first. File-upload requests reference the committed sample
+### orders at samples/orders/ via REST Client's `< path` directive.
+
+@host = http://localhost:8000
+
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=admin123
+
+
+# ============================================================================
+# POST /api/orders — multipart upload (one block per format)
+# ============================================================================
+
+### JSON (Carrefour-style)
+POST {{host}}/api/orders
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: multipart/form-data; boundary=ROT
+
+--ROT
+Content-Disposition: form-data; name="file"; filename="sample-json.json"
+Content-Type: application/json
+
+< ../../../samples/orders/sample-json.json
+--ROT--
+
+###
+
+### XML (Facturae-flavoured PO schema)
+POST {{host}}/api/orders
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: multipart/form-data; boundary=ROT
+
+--ROT
+Content-Disposition: form-data; name="file"; filename="sample-xml-facturae.xml"
+Content-Type: application/xml
+
+< ../../../samples/orders/sample-xml-facturae.xml
+--ROT--
+
+###
+
+### CSV (Leroy Merlin multi-row export)
+POST {{host}}/api/orders
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: multipart/form-data; boundary=ROT
+
+--ROT
+Content-Disposition: form-data; name="file"; filename="sample-csv.csv"
+Content-Type: text/csv
+
+< ../../../samples/orders/sample-csv.csv
+--ROT--
+
+###
+
+### EDIFACT D.96A ORDERS
+POST {{host}}/api/orders
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: multipart/form-data; boundary=ROT
+
+--ROT
+Content-Disposition: form-data; name="file"; filename="sample-edifact-carrefour.edi"
+Content-Type: application/octet-stream
+
+< ../../../samples/orders/sample-edifact-carrefour.edi
+--ROT--
+
+###
+
+### PDF (multimodal Parser Agent — costs ~$0.02 if Anthropic key is set)
+POST {{host}}/api/orders
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: multipart/form-data; boundary=ROT
+
+--ROT
+Content-Disposition: form-data; name="file"; filename="sample-pdf.pdf"
+Content-Type: application/pdf
+
+< ../../../samples/orders/sample-pdf.pdf
+--ROT--
+
+###
+
+### Unsupported extension → 415
+POST {{host}}/api/orders
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: multipart/form-data; boundary=ROT
+
+--ROT
+Content-Disposition: form-data; name="file"; filename="order.txt"
+Content-Type: text/plain
+
+random bytes that no parser supports
+--ROT--
+
+
+# ============================================================================
+# GET /api/orders — paginated list with optional filters
+# ============================================================================
+
+### All orders, page 1, default page_size=50
+GET {{host}}/api/orders
+Authorization: Bearer {{login.response.body.accessToken}}
+
+### Pending review only, smaller page
+GET {{host}}/api/orders?status=pending_review&page=1&page_size=10
+Authorization: Bearer {{login.response.body.accessToken}}
+
+### By retailer
+GET {{host}}/api/orders?retailer_code=CARREFOUR-ES&page_size=20
+Authorization: Bearer {{login.response.body.accessToken}}
+
+### By supplier
+GET {{host}}/api/orders?supplier_code=IBERIAN-FOODS&page_size=20
+Authorization: Bearer {{login.response.body.accessToken}}
+
+
+# ============================================================================
+# GET /api/orders/{id} — full detail
+# ============================================================================
+### Replace the UUID with one from the list above
+GET {{host}}/api/orders/67e766c7-b1cf-4628-a3d0-ebf911330522
+Authorization: Bearer {{login.response.body.accessToken}}

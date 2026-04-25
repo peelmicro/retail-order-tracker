@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     # General
     timezone: str = "Europe/Madrid"
 
+    # Override path to the samples/orders directory used by the seed endpoint.
+    # Empty string = derive from config.py location (host-side default).
+    # Set to e.g. /app/samples/orders inside the API container.
+    samples_dir: str = ""
+
     model_config = SettingsConfigDict(
         # Load root .env first, then apps/api/.env (later files override earlier).
         env_file=("../../.env", ".env"),
@@ -61,7 +66,11 @@ class Settings(BaseSettings):
 
     @property
     def samples_orders_dir(self) -> Path:
+        # Container deploys set SAMPLES_DIR to /app/samples/orders (or wherever
+        # the COPY landed). Locally we derive from this file's location:
         # config.py → parents[3] = repo root → samples/orders/
+        if self.samples_dir:
+            return Path(self.samples_dir)
         return Path(__file__).resolve().parents[3] / "samples" / "orders"
 
 

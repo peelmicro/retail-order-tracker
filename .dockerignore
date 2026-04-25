@@ -1,0 +1,45 @@
+# Build output / caches
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+**/.pytest_cache/
+.ruff_cache/
+**/.ruff_cache/
+.mypy_cache/
+**/.mypy_cache/
+.tsbuildinfo
+**/*.tsbuildinfo
+
+# VCS + IDE
+.git/
+.gitignore
+.github/
+.vscode/
+.idea/
+
+# Environment files (must NOT be baked into images)
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# Logs / OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Tests / coverage artefacts
+.coverage
+htmlcov/
+coverage/
+
+# Docker artefacts
+docker-compose.override.yml

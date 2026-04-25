@@ -1,0 +1,21 @@
+### Health — liveness probe (also used by the Docker HEALTHCHECK)
+
+@host = http://localhost:8000
+
+### Always returns {"status":"ok"} — no auth required
+GET {{host}}/health
+
+###
+
+### Swagger UI
+GET {{host}}/docs
+
+###
+
+### ReDoc
+GET {{host}}/redoc
+
+###
+
+### OpenAPI spec
+GET {{host}}/openapi.json

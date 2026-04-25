@@ -1,0 +1,54 @@
+### Seed — admin-only operational data populator
+###
+### Wipes feedbacks/agent_suggestions/order_line_items/orders/documents,
+### upserts retailers + suppliers from the canonical lists, uploads sample
+### files (real Document rows + MinIO blobs), then generates synthetic
+### historical + pending orders + suggestions + feedbacks.
+
+@host = http://localhost:8000
+
+# @name loginAdmin
+POST {{host}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=admin123
+
+###
+
+# @name loginOperator
+POST {{host}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=operator&password=operator123
+
+
+# ============================================================================
+# POST /api/seed — admin only
+# ============================================================================
+
+### Default counts (200 historical, 30 pending, 50 feedbacks). Takes ~10–20s.
+POST {{host}}/api/seed
+Authorization: Bearer {{loginAdmin.response.body.accessToken}}
+
+###
+
+### Small counts for quick iteration
+POST {{host}}/api/seed?historical_count=10&pending_count=3&feedback_count=2
+Authorization: Bearer {{loginAdmin.response.body.accessToken}}
+
+###
+
+### Larger counts for stress test
+POST {{host}}/api/seed?historical_count=500&pending_count=100&feedback_count=200
+Authorization: Bearer {{loginAdmin.response.body.accessToken}}
+
+###
+
+### As operator → 403 (admin-only)
+POST {{host}}/api/seed
+Authorization: Bearer {{loginOperator.response.body.accessToken}}
+
+###
+
+### Without a token → 401
+POST {{host}}/api/seed

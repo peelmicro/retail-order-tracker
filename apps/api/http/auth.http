@@ -1,0 +1,49 @@
+### Auth — login + /auth/me
+###
+### Run the "Login" request first; the access token is captured in {{login.response.body.accessToken}}
+### so subsequent requests in this file can reference it as Bearer auth.
+
+@host = http://localhost:8000
+
+
+# ============================================================================
+# Login (admin)
+# ============================================================================
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=admin123
+
+###
+
+# Same idea but as the operator role — note role:"operator" in /auth/me below.
+# @name loginOperator
+POST {{host}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=operator&password=operator123
+
+###
+
+# Wrong password → 401
+POST {{host}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=nope
+
+
+# ============================================================================
+# Current user
+# ============================================================================
+
+### As admin (run "Login" first)
+GET {{host}}/auth/me
+Authorization: Bearer {{login.response.body.accessToken}}
+
+### As operator
+GET {{host}}/auth/me
+Authorization: Bearer {{loginOperator.response.body.accessToken}}
+
+### Without a token → 401
+GET {{host}}/auth/me

@@ -22,6 +22,10 @@
     "dc:logs:pg": "docker compose logs -f postgres",
     "dc:logs:minio": "docker compose logs -f minio",
     "dc:logs:phoenix": "docker compose logs -f phoenix",
-    "dc:logs:n8n": "docker compose logs -f n8n"
+    "dc:logs:n8n": "docker compose logs -f n8n",
+    "dc:logs:api": "docker compose logs -f api",
+    "dc:logs:web": "docker compose logs -f web",
+    "dc:build": "docker compose build",
+    "dc:rebuild": "docker compose build --no-cache"
   }
 }

@@ -1,0 +1,73 @@
+### Feedback — operator decision on an agent suggestion
+###
+### Submitting feedback both inserts a Feedback row AND mutates the parent
+### order's status based on finalAction. Listen on /ws/orders to see the
+### order.status_changed event delivered live.
+
+@host = http://localhost:8000
+
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=admin123
+
+
+# ============================================================================
+# POST /api/feedback
+# ============================================================================
+### Pick an orderId that has a suggestion (agent action populated in
+### `GET /api/orders?status=pending_review`).
+
+### Decision: ACCEPTED — agent was right, approve the order
+POST {{host}}/api/feedback
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "orderId": "67e766c7-b1cf-4628-a3d0-ebf911330522",
+  "operatorDecision": "accepted",
+  "finalAction": "approve",
+  "operatorReason": "Looks normal, matches recent history."
+}
+
+###
+
+### Decision: MODIFIED — agent suggested approve, operator escalates instead
+POST {{host}}/api/feedback
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "orderId": "67e766c7-b1cf-4628-a3d0-ebf911330522",
+  "operatorDecision": "modified",
+  "finalAction": "escalate",
+  "operatorReason": "Quantity outlier — escalating despite agent confidence."
+}
+
+###
+
+### Decision: REJECTED — agent was wrong, request clarification from supplier
+POST {{host}}/api/feedback
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "orderId": "00000000-0000-0000-0000-000000000000",
+  "operatorDecision": "rejected",
+  "finalAction": "request_clarification",
+  "operatorReason": "Agent missed the typo in productCode; ask supplier."
+}
+
+###
+
+### Unknown order → 404
+POST {{host}}/api/feedback
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "orderId": "11111111-1111-1111-1111-111111111111",
+  "operatorDecision": "accepted",
+  "finalAction": "approve"
+}
