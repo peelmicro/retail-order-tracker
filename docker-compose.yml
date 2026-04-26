@@ -65,7 +65,9 @@ services:
       - phoenix_data:/data
 
   n8n:
-    image: n8nio/n8n:latest
+    # Pinned to 1.x — n8n 2.x removed N8N_USER_MANAGEMENT_DISABLED, which the
+    # demo relies on to avoid forcing operators through an "owner setup" dance.
+    image: n8nio/n8n:1.121.0
     container_name: rot-n8n
     restart: unless-stopped
     ports:
@@ -77,9 +79,10 @@ services:
       DB_POSTGRESDB_DATABASE: ${N8N_POSTGRES_DB:-n8n}
       DB_POSTGRESDB_USER: ${POSTGRES_USER:-retail}
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-retail_secret}
-      N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: ${N8N_USER:-admin}
-      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD:-admin}
+      # n8n 1.x removed basic auth in favour of internal user management.
+      # For a localhost demo we disable user management entirely so the
+      # editor is open access — never do this in production.
+      N8N_USER_MANAGEMENT_DISABLED: "true"
       GENERIC_TIMEZONE: ${TIMEZONE:-Europe/Madrid}
       WEBHOOK_URL: http://localhost:${N8N_PORT:-5678}/
       # Full-stack: API service is reachable via Docker DNS at api:8000.
@@ -92,7 +95,9 @@ services:
         condition: service_healthy
 
   n8n-init:
-    image: n8nio/n8n:latest
+    # Pinned to 1.x — n8n 2.x removed N8N_USER_MANAGEMENT_DISABLED, which the
+    # demo relies on to avoid forcing operators through an "owner setup" dance.
+    image: n8nio/n8n:1.121.0
     container_name: rot-n8n-init
     restart: "no"
     depends_on:
@@ -132,6 +137,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-retail_secret}
       # Storage
       MINIO_ENDPOINT: minio:9000
+      # Hostname baked into presigned URLs returned to the browser. Must be
+      # resolvable from the user's machine — `minio:9000` only works inside
+      # the Docker network, so we expose the host's mapped port instead.
+      MINIO_PUBLIC_ENDPOINT: localhost:${MINIO_API_PORT:-9000}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-orders}

@@ -181,4 +181,92 @@ describe("useOrdersWebSocket", () => {
     expect(toastInfo).not.toHaveBeenCalled();
     expect(invalidateQueries).not.toHaveBeenCalled();
   });
+
+  it("ignores a single transient CLOSED — likely a network blip", async () => {
+    const handler = vi.fn();
+    window.addEventListener("api:unauthorized", handler);
+    try {
+      mount(harness());
+      wsStatus.value = "CLOSED";
+      await Promise.resolve();
+      expect(handler).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("api:unauthorized", handler);
+    }
+  });
+
+  it("dispatches api:unauthorized after 3 consecutive CLOSEDs (stale token)", async () => {
+    const handler = vi.fn();
+    window.addEventListener("api:unauthorized", handler);
+    try {
+      mount(harness());
+
+      // Simulate three failed reconnect attempts. Each transition must go
+      // through a non-CLOSED value first because Vue watchers fire on change.
+      for (let i = 0; i < 3; i += 1) {
+        wsStatus.value = "CONNECTING";
+        await Promise.resolve();
+        wsStatus.value = "CLOSED";
+        await Promise.resolve();
+      }
+
+      expect(handler).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener("api:unauthorized", handler);
+    }
+  });
+
+  it("resets the failure counter after a successful OPEN", async () => {
+    const handler = vi.fn();
+    window.addEventListener("api:unauthorized", handler);
+    try {
+      mount(harness());
+
+      // Two CLOSEDs (still under threshold) ...
+      for (let i = 0; i < 2; i += 1) {
+        wsStatus.value = "CONNECTING";
+        await Promise.resolve();
+        wsStatus.value = "CLOSED";
+        await Promise.resolve();
+      }
+      // ... then a successful reconnect resets the counter ...
+      wsStatus.value = "OPEN";
+      await Promise.resolve();
+      // ... so two more CLOSEDs should NOT trip the threshold.
+      for (let i = 0; i < 2; i += 1) {
+        wsStatus.value = "CONNECTING";
+        await Promise.resolve();
+        wsStatus.value = "CLOSED";
+        await Promise.resolve();
+      }
+
+      expect(handler).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("api:unauthorized", handler);
+    }
+  });
+
+  it("does not dispatch api:unauthorized when the user is signed out", async () => {
+    localStorage.removeItem("rot:token");
+    setActivePinia(createPinia());
+    useAuthStore();
+
+    const handler = vi.fn();
+    window.addEventListener("api:unauthorized", handler);
+    try {
+      mount(harness());
+
+      for (let i = 0; i < 5; i += 1) {
+        wsStatus.value = "CONNECTING";
+        await Promise.resolve();
+        wsStatus.value = "CLOSED";
+        await Promise.resolve();
+      }
+
+      // No token → CLOSED is expected (URL is undefined), shouldn't log out.
+      expect(handler).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("api:unauthorized", handler);
+    }
+  });
 });

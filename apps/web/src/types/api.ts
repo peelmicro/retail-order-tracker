@@ -102,6 +102,17 @@ export interface AgentSuggestionResponse {
   createdAt: string;
 }
 
+export interface AnalyseByOrderResponse {
+  suggestionId: string;
+  orderId: string;
+  action: AgentAction;
+  confidence: number;
+  reasoning: string;
+  anomaliesDetected: string[];
+  phoenixTraceId: string | null;
+  recentOrdersConsidered: number;
+}
+
 export interface FeedbackResponse {
   id: string;
   operatorDecision: OperatorDecision;

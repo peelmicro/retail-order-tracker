@@ -12,7 +12,13 @@ class Settings(BaseSettings):
     postgres_password: str = "retail_secret"
 
     # MinIO
+    # `minio_endpoint` is what the API uses for upload/download. Inside Docker
+    # Compose this is `minio:9000`; on the host it's `localhost:9000`.
+    # `minio_public_endpoint` is the host bakes into presigned URLs so the
+    # browser can resolve them. Empty = reuse `minio_endpoint` (host-mode dev,
+    # where browser and API both see `localhost:9000`).
     minio_endpoint: str = "localhost:9000"
+    minio_public_endpoint: str = ""
     minio_root_user: str = "minioadmin"
     minio_root_password: str = "minioadmin"
     minio_bucket: str = "orders"

@@ -51,7 +51,7 @@ Two distinct agents, each with its own prompt, Phoenix dataset, and evaluator:
 | **Parser Agent** | Extract structured data from PDFs | PDF bytes (multimodal) | `OrderDTO` with `parsing_confidence` |
 | **Analyst Agent** | Decide action on an order | `OrderDTO` + last 50 orders for retailer–supplier pair | `{action, confidence, reasoning, anomalies_detected[]}` via tool calling |
 
-Parser Agent runs only for PDF uploads. Analyst Agent runs for every order regardless of format. Both export OpenTelemetry traces to Phoenix.
+Parser Agent runs only for PDF uploads. Analyst Agent runs **on demand** — triggered by the operator from the Review Queue (per-row "Run analysis" button) or programmatically via `POST /api/agents/analyst/run/by-order/{order_id}`. It is **not** invoked automatically as part of `POST /api/orders`. Both agents export OpenTelemetry traces to Phoenix.
 
 ## Document Parsing
 

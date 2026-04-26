@@ -3,6 +3,7 @@ import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
+import RunAnalysisButton from "@/components/RunAnalysisButton.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -159,6 +160,11 @@ function nextPage() {
                   {{ (order.suggestionConfidence * 100).toFixed(0) }}%
                 </span>
               </div>
+              <RunAnalysisButton
+                v-else-if="order.status === 'pending_review'"
+                :order-id="order.id"
+                :order-code="order.code"
+              />
               <span v-else class="text-xs text-muted-foreground">—</span>
             </TableCell>
             <TableCell class="text-muted-foreground">

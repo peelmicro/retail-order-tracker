@@ -5,6 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import DocumentLink from "@/components/DocumentLink.vue";
 import FeedbackDialog from "@/components/FeedbackDialog.vue";
+import RunAnalysisButton from "@/components/RunAnalysisButton.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -179,8 +180,15 @@ const prettyValue = (v: string) => v.replaceAll("_", " ");
               </code>
             </p>
           </CardContent>
-          <CardContent v-else class="text-sm text-muted-foreground">
-            Run the Analyst Agent on this order to generate a suggestion.
+          <CardContent v-else class="space-y-3 text-sm text-muted-foreground">
+            <p>Run the Analyst Agent on this order to generate a suggestion.</p>
+            <RunAnalysisButton
+              v-if="order.status === 'pending_review'"
+              :order-id="order.id"
+              :order-code="order.code"
+              size="default"
+              variant="default"
+            />
           </CardContent>
         </Card>
 

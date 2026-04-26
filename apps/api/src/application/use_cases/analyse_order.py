@@ -73,6 +73,10 @@ class AnalyseOrderUseCase:
 
         current_dto = await self._build_order_dto(order)
 
+        # Pull a few extra candidates so we can still hit recent_limit after
+        # dropping orders that are missing line items (which can't satisfy the
+        # OrderDTO's min_length=1 constraint and contribute nothing to the
+        # outlier check anyway).
         recent_orders = (
             await self._session.execute(
                 select(Order)
@@ -80,10 +84,16 @@ class AnalyseOrderUseCase:
                 .where(Order.supplier_id == order.supplier_id)
                 .where(Order.id != order_id)
                 .order_by(Order.order_date.desc())
-                .limit(recent_limit)
+                .limit(recent_limit * 2)
             )
         ).scalars().all()
-        recent_dtos = [await self._build_order_dto(o) for o in recent_orders]
+        recent_dtos: list[OrderDTO] = []
+        for candidate in recent_orders:
+            dto = await self._try_build_order_dto(candidate)
+            if dto is not None:
+                recent_dtos.append(dto)
+            if len(recent_dtos) >= recent_limit:
+                break
 
         agent_result = self._agent.analyze(
             AnalystAgentInput(order=current_dto, recent_orders=recent_dtos)
@@ -154,3 +164,15 @@ class AnalyseOrderUseCase:
                 for li in line_items
             ],
         )
+
+    async def _try_build_order_dto(self, order: Order) -> OrderDTO | None:
+        """Build a historical-context DTO, returning None when the order is
+        unusable (e.g. seed-generated rows with no line items).
+
+        Logged at debug level rather than warning — empty historical orders
+        are expected from synthetic data, not a real error."""
+        try:
+            return await self._build_order_dto(order)
+        except Exception as exc:  # noqa: BLE001
+            _log.debug("Skipping order %s as historical context: %s", order.id, exc)
+            return None

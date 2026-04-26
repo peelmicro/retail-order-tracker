@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, watch } from "vue";
 import { RouterView, useRouter } from "vue-router";
 
 import ConnectionBadge from "@/components/ConnectionBadge.vue";
@@ -24,6 +24,20 @@ onMounted(async () => {
     }
   }
 });
+
+// Router guards only fire on navigation events, so a token going stale
+// mid-page (e.g. expired JWT, API restart with a fresh secret) doesn't
+// kick the user out by itself. Watch the auth flag and push to /login
+// when it flips false on a protected route.
+watch(
+  () => auth.isAuthenticated,
+  (isAuth) => {
+    const current = router.currentRoute.value;
+    if (!isAuth && current.meta.requiresAuth) {
+      router.push({ name: "login", query: { next: current.fullPath } });
+    }
+  },
+);
 
 async function handleLogout() {
   auth.logout();

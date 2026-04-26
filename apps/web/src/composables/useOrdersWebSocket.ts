@@ -24,10 +24,15 @@ export function useOrdersWebSocket() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  // An empty URL keeps useWebSocket() idle — exactly what we want when
-  // the user signs out.
+  // useWebSocket() only skips connecting when the URL is undefined.
+  // Returning "" makes Chrome silently fail but Firefox throws
+  // `DOMException: An invalid or illegal string was specified` synchronously
+  // from new WebSocket(""), crashing App.vue's setup. undefined keeps the
+  // composable cleanly idle until the user signs in.
   const url = computed(() =>
-    auth.token ? `${WS_BASE}?token=${encodeURIComponent(auth.token)}` : "",
+    auth.token
+      ? `${WS_BASE}?token=${encodeURIComponent(auth.token)}`
+      : undefined,
   );
 
   const { status, data } = useWebSocket(url, {
@@ -36,6 +41,30 @@ export function useOrdersWebSocket() {
       delay: 2000,
     },
     immediate: true,
+  });
+
+  // The HTTP path fires `api:unauthorized` on a 401 from apiFetch, but a
+  // WebSocket upgrade rejection (e.g. JWT expired → server returns 403)
+  // doesn't go through apiFetch. Without the cleanup, useWebSocket retries
+  // every 2 s forever with the now-stale token. Track consecutive CLOSED
+  // transitions and treat 3 in a row as "the server doesn't like our
+  // token" — fire api:unauthorized so the auth store logs us out and the
+  // App.vue watcher pushes to /login. The threshold (≈ 6 s) is well above
+  // a transient network blip and well below "user wandered off".
+  let consecutiveCloses = 0;
+  const FAILURE_THRESHOLD = 3;
+  watch(status, (s) => {
+    if (s === "OPEN") {
+      consecutiveCloses = 0;
+      return;
+    }
+    if (s === "CLOSED" && auth.token) {
+      consecutiveCloses += 1;
+      if (consecutiveCloses >= FAILURE_THRESHOLD) {
+        consecutiveCloses = 0;
+        window.dispatchEvent(new CustomEvent("api:unauthorized"));
+      }
+    }
   });
 
   // Watching the `data` ref fires on every incoming frame — more reliable

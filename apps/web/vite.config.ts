@@ -2,7 +2,7 @@ import path from "node:path";
 
 import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
-import { defineConfig } from "vitest/config";
+import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
@@ -14,12 +14,5 @@ export default defineConfig({
   server: {
     port: Number(process.env.WEB_PORT) || 5173,
     strictPort: true,
-  },
-  test: {
-    globals: true,
-    environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
-    css: false,
-    include: ["src/**/*.{test,spec}.ts"],
   },
 });

@@ -19,9 +19,20 @@ class MinioFileStorage:
     their S3-compatible gateways) — only the endpoint + credentials change.
     """
 
-    def __init__(self, client: Minio, bucket: str) -> None:
+    def __init__(
+        self,
+        client: Minio,
+        bucket: str,
+        presign_client: Minio | None = None,
+    ) -> None:
         self._client = client
         self._bucket = bucket
+        # Presigned URLs are signed against the client's endpoint hostname.
+        # In Docker Compose the API talks to MinIO at `minio:9000` (internal
+        # DNS), but the browser can only resolve `localhost:9000`. Use a
+        # separate client configured with the public endpoint when one is
+        # provided; otherwise fall back to the ops client.
+        self._presign_client = presign_client or client
 
     def upload(
         self,
@@ -47,7 +58,7 @@ class MinioFileStorage:
             response.release_conn()
 
     def presigned_url(self, key: str, *, expires_seconds: int = 3600) -> str:
-        return self._client.presigned_get_object(
+        return self._presign_client.presigned_get_object(
             self._bucket,
             key,
             expires=timedelta(seconds=expires_seconds),
@@ -65,14 +76,35 @@ class MinioFileStorage:
 
 
 def make_minio_storage() -> MinioFileStorage:
-    """Factory that builds a MinioFileStorage from the app settings."""
+    """Factory that builds a MinioFileStorage from the app settings.
+
+    Two clients when a public endpoint is configured: one for ops
+    (upload/download via the internal Docker DNS name) and one for
+    presigning (with the host-resolvable hostname baked into the URL).
+
+    `region="us-east-1"` is set explicitly because the public endpoint
+    (`localhost:9000`) is NOT reachable from inside the API container —
+    the Python minio client otherwise probes the endpoint to discover
+    the bucket region the first time it presigns.
+    """
     client = Minio(
         settings.minio_endpoint,
         access_key=settings.minio_root_user,
         secret_key=settings.minio_root_password,
         secure=settings.minio_secure,
+        region="us-east-1",
     )
-    return MinioFileStorage(client, settings.minio_bucket)
+    presign_client: Minio | None = None
+    public_endpoint = settings.minio_public_endpoint.strip()
+    if public_endpoint and public_endpoint != settings.minio_endpoint:
+        presign_client = Minio(
+            public_endpoint,
+            access_key=settings.minio_root_user,
+            secret_key=settings.minio_root_password,
+            secure=settings.minio_secure,
+            region="us-east-1",
+        )
+    return MinioFileStorage(client, settings.minio_bucket, presign_client=presign_client)
 
 
 @lru_cache(maxsize=1)
